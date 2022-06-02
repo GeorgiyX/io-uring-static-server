@@ -6,8 +6,6 @@
 Клонируем репозиторий и подмодули:
 
 ```bash
-git clone https://github.com/GeorgiyX/io-uring-static-server.git
-git submodule init
-git submodule update
+git clone --recurse-submodules https://github.com/GeorgiyX/io-uring-static-server.git
 ```
 
