@@ -1,0 +1,3 @@
+[submodule "http-test-suite"]
+	path = http-test-suite
+	url = https://github.com/init/http-test-suite
