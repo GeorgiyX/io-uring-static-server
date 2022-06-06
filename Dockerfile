@@ -13,7 +13,7 @@ RUN tar -xvzf liburing-liburing-2.1.tar.gz
 WORKDIR /tmp/liburing-liburing-2.1
 RUN ./configure
 RUN make -j`nproc`
-RUN install
+RUN make install
 
 # Build CDS library
 WORKDIR /tmp
@@ -31,7 +31,7 @@ COPY . .
 WORKDIR /app/build
 RUN cmake .. && make -j`nproc`
 
-
+# command
 WORKDIR /app
 CMD ./build/io-uring-static-server
 

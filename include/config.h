@@ -29,6 +29,7 @@ struct Config : boost::serialization::singleton<Config> {
     [[nodiscard]] const ConfigParams &params() const;
 
 private:
+    Config() = default;
     friend boost::serialization::detail::singleton_wrapper<Config>;
     static std::unordered_map<std::string, std::string> stream2map(std::istream &istream);
     ConfigParams _params;
