@@ -2,5 +2,4 @@
 /cmake-*/
 .DS_Store
 /build/
-/*.txt
 *.py

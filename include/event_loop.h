@@ -1,6 +1,9 @@
 #ifndef IO_URING_STATIC_SERVER_EVENT_LOOP_H
 #define IO_URING_STATIC_SERVER_EVENT_LOOP_H
 
+// project
+#include "connection_state.h"
+
 // stl
 #include <memory>
 
@@ -9,15 +12,13 @@
 
 class EventLoop {
 public:
-    EventLoop(std::shared_ptr<io_uring> ring);
-
+    explicit EventLoop(std::shared_ptr<io_uring> ring);
     void loop();
-
-    void addAcceptorSQE(int fd);
+    void init(int fd);
 
 private:
     std::shared_ptr<io_uring> _ring;
-
+    ConnectionState _connection;
 };
 
 
