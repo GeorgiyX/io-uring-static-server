@@ -21,12 +21,15 @@ struct Config : boost::serialization::singleton<Config> {
         bool enableSqPoll = true;
         unsigned rlimitNoFile = 8192;
         unsigned ringEntities = 8192;
+        unsigned bufferSize = 4096;
+        bool registerBuffers = true;
     };
 
     const Config &initFromFile(const std::string &path);
     [[nodiscard]] const ConfigParams &params() const;
 
 private:
+    friend boost::serialization::detail::singleton_wrapper<Config>;
     static std::unordered_map<std::string, std::string> stream2map(std::istream &istream);
     ConfigParams _params;
 };

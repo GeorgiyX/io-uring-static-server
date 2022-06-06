@@ -19,7 +19,7 @@ std::unordered_map<std::string, std::string> Config::stream2map(std::istream &is
         std::istringstream iss(line);
         std::string key, value;
         iss >> key >> value;
-        configMap.emplace(key, value);
+        configMap.emplace(std::move(key), std::move(value));
     }
     return configMap;
 }
@@ -45,6 +45,10 @@ const Config &Config::initFromFile(const std::string &path) {
                           std::atoi(configMap.at("rlimit_nofile").c_str()) : params.rlimitNoFile;
     params.ringEntities = configMap.contains("ring_entities") ?
                           std::atoi(configMap.at("ring_entities").c_str()) : params.ringEntities;
+    params.bufferSize = configMap.contains("buffer_size") ?
+                        std::atoi(configMap.at("buffer_size").c_str()) : params.bufferSize;
+    params.registerBuffers = configMap.contains("register_buffers") ?
+                             boost::lexical_cast<bool>(configMap.at("register_buffers")) : params.registerBuffers;
 
     _params = params;
 
