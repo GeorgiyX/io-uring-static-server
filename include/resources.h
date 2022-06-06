@@ -20,7 +20,7 @@ class BufferManager : public boost::serialization::singleton<BufferManager> {
 public:
     void create(size_t chunkSize, size_t chunkCount);
     char *getBufferByFd(int fd);
-    [[nodiscard]] static size_t bufferSize() ;
+    [[nodiscard]] static size_t fullBufferSize() ;
     [[nodiscard]] static size_t buffersCount() ;
     void setBufferSize(size_t size, int fd);
     size_t getBufferSize(int fd);
@@ -49,11 +49,8 @@ class FileManager : public boost::serialization::singleton<FileManager> {
 
     std::optional<file_info_ref_it> getFileInfo(const std::string &filePath);
 private:
-
-
     FileManager();
     friend boost::serialization::detail::singleton_wrapper<FileManager>;
-
     cds_map _map;
     std::filesystem::path _basePath;
 };

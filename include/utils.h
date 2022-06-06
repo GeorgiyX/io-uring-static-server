@@ -3,6 +3,7 @@
 
 // stl
 #include <iostream>
+#include <bits/resource.h>
 
 namespace Utils {
     struct KernelVersion {
@@ -19,6 +20,8 @@ namespace Utils {
     };
 
     bool isPrivileged();
+
+    void increaseResourceLimit(int flag, rlim_t rlim);
 }
 
 std::ostream& operator<<(std::ostream& os, const Utils::KernelVersion& kernelVersion);

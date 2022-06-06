@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/utsname.h>
 #include <stdexcept>
+#include <sys/resource.h>
 
 #include <liburing.h>
 #include <cassert>
@@ -49,6 +50,25 @@ void hello_world() {
 
 bool Utils::isPrivileged() {
     return !geteuid();
+}
+
+void Utils::increaseResourceLimit(int flag, rlim_t rlim) {
+    rlimit limits{};
+    if (!getrlimit(flag, &limits)) {
+        throw std::runtime_error("getrlimit not successful (flag: " + std::to_string(rlim) + ")");
+    }
+    limits.rlim_cur = limits.rlim_cur + rlim;
+
+    if (limits.rlim_max < limits.rlim_cur) {
+        if (!Utils::isPrivileged()) {
+            throw std::runtime_error("it is not possible to increase rlimit::rlim_max, super user rights are required");
+        }
+        limits.rlim_max = limits.rlim_max + rlim;
+    }
+
+    if (setrlimit(flag, &limits)) {
+        throw std::runtime_error("setrlimit not successful (flag: " + std::to_string(rlim) + ")");
+    }
 }
 
 void move2digit(char **string) {

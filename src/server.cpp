@@ -62,25 +62,10 @@ void Server::registerBuffers() {
     std::vector<iovec> iovectors(BufferManager::buffersCount());
     for (int index = 0; index < iovectors.size(); index++) {
         iovectors[index].iov_base = BufferManager::get_mutable_instance().getBufferByFd(index);
-        iovectors[index].iov_len = BufferManager::bufferSize();
+        iovectors[index].iov_len = BufferManager::fullBufferSize();
     }
 
-    rlimit rlimitMemlock{};
-    if (!getrlimit(RLIMIT_MEMLOCK, &rlimitMemlock)) {
-        throw std::runtime_error("getrlimit RLIMIT_MEMLOCK not successful");
-    }
-    rlimitMemlock.rlim_cur = rlimitMemlock.rlim_cur + BufferManager::bufferSize();
-
-    if (rlimitMemlock.rlim_max < rlimitMemlock.rlim_cur) {
-        if (!Utils::isPrivileged()) {
-            throw std::runtime_error("it is not possible to increase RLIMIT_MEMLOCK, super user rights are required");
-        }
-        rlimitMemlock.rlim_max = rlimitMemlock.rlim_max + BufferManager::bufferSize();
-    }
-
-    if (setrlimit(RLIMIT_MEMLOCK, &rlimitMemlock)) {
-        throw std::runtime_error("setrlimit RLIMIT_MEMLOCK not successful");
-    }
+    Utils::increaseResourceLimit(RLIMIT_MEMLOCK, BufferManager::fullBufferSize());
 
     if (io_uring_register_buffers(_mainRing.get(), iovectors.data(), iovectors.size())) {
         throw std::runtime_error("can't register buffers");

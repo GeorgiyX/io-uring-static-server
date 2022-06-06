@@ -1,11 +1,13 @@
 // project
 #include "resources.h"
 #include "config.h"
+#include "utils.h"
 
 // stl
 #include <cstring>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/resource.h>
 
 
 void BufferManager::create(size_t chunkSize, size_t chunkCount) {
@@ -23,8 +25,8 @@ char *BufferManager::getBufferByFd(int fd) {
     return _buffers.data() + (fd * _bufferSize);
 }
 
-size_t BufferManager::bufferSize() {
-    return get_const_instance()._bufferSize;
+size_t BufferManager::fullBufferSize() {
+    return get_const_instance()._buffers.size();
 }
 
 size_t BufferManager::buffersCount() {
@@ -51,6 +53,8 @@ _basePath(Config::get_const_instance().params().documentRoot)
     if (!std::filesystem::exists(_basePath)) {
         throw std::runtime_error("document dir not exists");
     }
+
+    Utils::increaseResourceLimit(RLIMIT_NOFILE, Config::get_const_instance().params().rlimitNoFile);
 }
 
 std::optional<FileManager::file_info_ref_it>  FileManager::getFileInfo(const std::string &filePath) {
