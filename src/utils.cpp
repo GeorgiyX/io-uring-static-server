@@ -6,6 +6,7 @@
 #include <sys/utsname.h>
 #include <stdexcept>
 #include <sys/resource.h>
+#include <string.h>
 
 #include <liburing.h>
 #include <cassert>
@@ -54,20 +55,14 @@ bool Utils::isPrivileged() {
 
 void Utils::increaseResourceLimit(int flag, rlim_t rlim) {
     rlimit limits{};
-    if (!getrlimit(flag, &limits)) {
-        throw std::runtime_error("getrlimit not successful (flag: " + std::to_string(rlim) + ")");
+    if (getrlimit(flag, &limits)) {
+        throw std::runtime_error("getrlimit not successful (flag: " + std::to_string(flag) + ")");
     }
-    limits.rlim_cur = limits.rlim_cur + rlim;
-
-    if (limits.rlim_max < limits.rlim_cur) {
-        if (!Utils::isPrivileged()) {
-            throw std::runtime_error("it is not possible to increase rlimit::rlim_max, super user rights are required");
-        }
-        limits.rlim_max = limits.rlim_max + rlim;
-    }
+    limits.rlim_cur = rlim;
 
     if (setrlimit(flag, &limits)) {
-        throw std::runtime_error("setrlimit not successful (flag: " + std::to_string(rlim) + ")");
+        throw std::runtime_error(std::string("setrlimit not successful (flag: ") +
+        std::to_string(flag) + "): " + strerror(errno));
     }
 }
 

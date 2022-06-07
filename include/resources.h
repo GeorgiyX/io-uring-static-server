@@ -9,6 +9,7 @@
 #include <boost/serialization/singleton.hpp>
 
 // cds
+#include <cds/details/make_const_type.h>
 #include <cds/container/michael_map_nogc.h>
 #include <cds/container/michael_kvlist_nogc.h>
 
@@ -22,7 +23,7 @@ public:
     char *getBuffer(int fd);
     [[nodiscard]] static size_t fullBufferSize() ;
     [[nodiscard]] static size_t buffersCount() ;
-    size_t bufferSize();
+    size_t bufferSize() const;
     void setBufferFilling(size_t size, int fd);
     size_t getBufferFilling(int fd);
 
@@ -48,9 +49,9 @@ public:
 
     using cds_list = cds::container::MichaelKVList<cds::gc::nogc, std::string, FileInfo>;
     using cds_map = cds::container::MichaelHashMap<cds::gc::nogc, cds_list>;
-    using file_info_ref_it = std::reference_wrapper<const cds_map::iterator>;
+    using file_info_ref = std::reference_wrapper<const FileInfo>;
 
-    std::optional<file_info_ref_it> getFileInfo(const std::string &filePath);
+    std::optional<file_info_ref> getFileInfo(const std::string &filePath);
 private:
     FileManager();
     friend boost::serialization::detail::singleton_wrapper<FileManager>;

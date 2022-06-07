@@ -25,6 +25,12 @@ RUN vcpkg install libcds
 RUN cp -r installed/x64-linux/include/cds /usr/include
 RUN cp buildtrees/libcds/x64-linux-rel/bin/* /usr/lib
 
+# Build skyr-url
+WORKDIR /tmp/vcpkg
+RUN ./vcpkg install skyr-url
+RUN cp installed/x64-linux/lib/libskyr-url.a /usr/lib
+RUN cp -r installed/x64-linux/include/* /usr/include/
+
 # Build server
 WORKDIR /app
 COPY . .

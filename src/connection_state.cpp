@@ -109,7 +109,7 @@ void ConnectionState::processWrite() {
     }
 
     off_t offset = 0;
-    /* sendfile is synchronous, but very fast. works faster than via splice */
+    /* sendfile is synchronous, but very fast. works faster than via splice + pipe */
     if (sendfile(_fd, file->fd, &offset, file->size) < 0) {
         Logger::warning("error in sendfile");
     }
@@ -120,5 +120,31 @@ void ConnectionState::processWrite() {
 void ConnectionState::processReceive() {
     /* zero send */
     if (!_result) { return; }
-    //todo: pase http
+
+    auto bufferLength = _buffers.getBufferFilling(_fd) + _result;
+    _buffers.setBufferFilling(bufferLength, _fd);
+
+    auto parseResult = _parser.parse(_buffers.getBuffer(_fd), bufferLength);
+    switch (parseResult) {
+        case HTTPParser::OK:
+            processOkParse();
+            break;
+        case HTTPParser::INVALID:
+            processInvalidParse();
+            break;
+        case HTTPParser::INCOMPLETE:
+            processIncompleteParse();
+            break;
+    }
+}
+
+void ConnectionState::processIncompleteParse() {
+
+}
+
+void ConnectionState::processInvalidParse() {
+
+}
+
+void ConnectionState::processOkParse() {
 }

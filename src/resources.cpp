@@ -45,8 +45,8 @@ size_t BufferManager::getBufferFilling(int fd) {
     return _buffersFilling[fd];
 }
 
-size_t BufferManager::bufferSize() {
-    return _bufferSize;
+size_t BufferManager::bufferSize() const {
+    return _bufferSize - 1 /* zero terminate */;
 }
 
 // No hashing is planned. Creating a map with reserve. Load factor = 3 (https://habr.com/ru/post/250383/).
@@ -61,10 +61,10 @@ _basePath(Config::get_const_instance().params().documentRoot)
     Utils::increaseResourceLimit(RLIMIT_NOFILE, Config::get_const_instance().params().rlimitNoFile);
 }
 
-std::optional<FileManager::file_info_ref_it>  FileManager::getFileInfo(const std::string &filePath) {
+std::optional<FileManager::file_info_ref> FileManager::getFileInfo(const std::string &filePath) {
     auto iter = _map.contains(filePath);
     if (iter != _map.end()) {
-        return {std::cref(iter)};
+        return {std::cref(iter->second)};
     }
     auto path = _basePath / filePath;
     if (!path.has_filename()) {
@@ -91,7 +91,7 @@ std::optional<FileManager::file_info_ref_it>  FileManager::getFileInfo(const std
         return {std::nullopt};
     }
 
-    return {std::cref(iter)};
+    return {std::cref(iter->second)};
 }
 
 FileManager::FileInfo::FileInfo(size_t &&sizeRef, int &&fdRef)
@@ -100,7 +100,5 @@ FileManager::FileInfo::FileInfo(size_t &&sizeRef, int &&fdRef)
 }
 
 FileManager::FileInfo::~FileInfo() {
-    if (close(fd)) {
-        throw std::runtime_error("can't close fd");
-    }
+    close(fd);
 }

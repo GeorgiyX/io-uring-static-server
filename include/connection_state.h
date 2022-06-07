@@ -39,6 +39,10 @@ private:
     void processWrite();
     void processReceive();
 
+    void processOkParse();
+    void processIncompleteParse();
+    void processInvalidParse();
+
     void addAcceptorSQE(int fd);
     void addReadSQE(int fd);
     void addSendSQE(int fd);

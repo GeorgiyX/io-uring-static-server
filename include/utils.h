@@ -3,7 +3,7 @@
 
 // stl
 #include <iostream>
-#include <bits/resource.h>
+#include <sys/resource.h>
 
 
 namespace Utils {
