@@ -3,6 +3,7 @@
 #include "config.h"
 #include "resources.h"
 #include "utils.h"
+#include "logger.h"
 
 // stl
 #include <cstring>
@@ -16,28 +17,29 @@ Server::Server(const std::string &configPath) :
 _rings(), _mainRing(), _loops(), _mainLoop(), _acceptorFd(-1), _loopsThreads() {
     const auto &params = Config::get_mutable_instance().initFromFile(configPath).params();
 
-    std::cout << "creating io_rings...";
+    Logger::info("creating io_rings...");
     _mainRing = Server::createRing();
     for (size_t index = 0; index < params.cpuLimit; index++) {
         _rings.push_back(Server::createRing(_mainRing->ring_fd));
     }
 
-    std::cout << " done!" << std::endl << "allocating buffers...";
+    Logger::info(" done!\nallocating buffers...");
     BufferManager::get_mutable_instance().create(params.bufferSize, params.ringEntities);
     if (params.registerBuffers) {
-        std::cout << " done!" << std::endl << "registering buffers..." << std::endl;
+        Logger::info(" done!\nregistering buffers...");
         registerBuffers();
     }
 
-    std::cout << " done!" << std::endl << "setup storage..." << std::endl;
+    Logger::info(" done!\nsetup storage...");
     FileManager::get_mutable_instance();
 
-    std::cout << "done! creating event loops..." << std::endl;
+
+    Logger::info(" done!\ncreating event loops...");
     _mainLoop = std::make_shared<EventLoop>(_mainRing);
     std::for_each(_rings.begin(), _rings.end(), [this](auto &ring) {
         _loops.push_back(std::make_shared<EventLoop>(ring));
     });
-    std::cout << " done!" << std::endl << std::endl;
+    Logger::info(" done!");
 }
 
 std::shared_ptr<io_uring> Server::createRing(int backendFd) {
@@ -87,10 +89,10 @@ void Server::registerBuffers() {
 }
 
 void Server::run() {
-    std::cout << "open acceptor socket...";
+    Logger::info("open acceptor socket...");
     _acceptorFd = Server::createAcceptor(Config::get_const_instance().params().port,
                                          Config::get_const_instance().params().ringEntities);
-    std::cout << " done!" << std::endl << "start event loops" << std::endl;
+    Logger::info(" done!\nstart event loops");
     _loopsThreads.reserve(_loops.size());
     std::for_each(_loops.begin(), _loops.end(), [this](std::shared_ptr<EventLoop> &loop) {
         loop->init(_acceptorFd);
@@ -128,6 +130,7 @@ int Server::createAcceptor(unsigned port, unsigned backlog) {
 Server::~Server() {
     Server::shutdownAcceptor(_acceptorFd);
 
+    //todo: destructor in std::shared_ptr
     std::for_each(_rings.begin(), _rings.end(), [](auto &ring){
         io_uring_queue_exit(ring.get());
     });
