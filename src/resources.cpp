@@ -10,9 +10,9 @@
 #include <sys/resource.h>
 
 
-void BufferManager::create(size_t chunkSize, size_t chunkCount) {
-    _bufferSize = chunkSize;
-    _buffersCount = chunkCount;
+void BufferManager::create(size_t bufferSize, size_t bufferCount) {
+    _bufferSize = bufferSize;
+    _buffersCount = bufferCount;
 
     _buffers.resize(_buffersCount * _bufferSize);
     std::memset(_buffers.data(), 0, _buffers.capacity());
@@ -21,7 +21,7 @@ void BufferManager::create(size_t chunkSize, size_t chunkCount) {
     std::memset(_buffersFilling.data(), 0, _buffersFilling.capacity());
 }
 
-char *BufferManager::getBufferByFd(int fd) {
+char *BufferManager::getBuffer(int fd) {
     return _buffers.data() + (fd * _bufferSize);
 }
 
@@ -37,15 +37,19 @@ BufferManager::BufferManager() : _buffers(), _buffersFilling(), _bufferSize(), _
 
 }
 
-void BufferManager::setBufferSize(size_t size, int fd) {
+void BufferManager::setBufferFilling(size_t size, int fd) {
     _buffersFilling[fd] = size;
 }
 
-size_t BufferManager::getBufferSize(int fd) {
+size_t BufferManager::getBufferFilling(int fd) {
     return _buffersFilling[fd];
 }
 
-// Перехеширование не планируется. Создаем map с запасом. Load factor = 3 (https://habr.com/ru/post/250383/).
+size_t BufferManager::bufferSize() {
+    return _bufferSize;
+}
+
+// No hashing is planned. Creating a map with reserve. Load factor = 3 (https://habr.com/ru/post/250383/).
 FileManager::FileManager() :
 _map(Config::get_const_instance().params().rlimitNoFile, 3),
 _basePath(Config::get_const_instance().params().documentRoot)

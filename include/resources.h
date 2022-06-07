@@ -18,12 +18,13 @@
  */
 class BufferManager : public boost::serialization::singleton<BufferManager> {
 public:
-    void create(size_t chunkSize, size_t chunkCount);
-    char *getBufferByFd(int fd);
+    void create(size_t bufferSize, size_t bufferCount);
+    char *getBuffer(int fd);
     [[nodiscard]] static size_t fullBufferSize() ;
     [[nodiscard]] static size_t buffersCount() ;
-    void setBufferSize(size_t size, int fd);
-    size_t getBufferSize(int fd);
+    size_t bufferSize();
+    void setBufferFilling(size_t size, int fd);
+    size_t getBufferFilling(int fd);
 
 private:
     BufferManager();
@@ -36,7 +37,9 @@ private:
 
 /** It is important to follow the order of initialization of singletons */
 class FileManager : public boost::serialization::singleton<FileManager> {
+public:
     struct FileInfo {
+        FileInfo() = default;
         FileInfo(size_t &&sizeRef, int &&fdRef);
         ~FileInfo();
         size_t size;

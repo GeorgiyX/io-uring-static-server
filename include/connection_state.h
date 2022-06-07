@@ -1,6 +1,10 @@
 #ifndef IO_URING_STATIC_SERVER_CONNECTION_STATE_H
 #define IO_URING_STATIC_SERVER_CONNECTION_STATE_H
 
+// project
+#include "resources.h"
+#include "http.h"
+
 // stl
 #include <cstdint>
 #include <memory>
@@ -8,6 +12,9 @@
 
 class ConnectionState {
 public:
+    using io_uring_prep_write_ptr =  std::function<void(io_uring_sqe *, int, const void *, unsigned)>;
+    using io_uring_prep_read_ptr =  std::function<void(io_uring_sqe *, int, void *, unsigned)>;
+
     enum State : int {
         ACCEPT = 0,
         RECEIVE,
@@ -28,14 +35,26 @@ public:
 
 
 private:
+    void processAccept();
+    void processWrite();
+    void processReceive();
+
     void addAcceptorSQE(int fd);
-    void readSQE();
-    void sendSQE();
+    void addReadSQE(int fd);
+    void addSendSQE(int fd);
 
     State _state;
     int _result;
     int _fd;
+    int _maxConnections;  // highest descriptor (sock + file)
+    std::vector<std::optional<FileManager::FileInfo>> _activeFileTransmit;  // map: fd-file
     std::shared_ptr<io_uring> _ring;
+    BufferManager &_buffers;
+    FileManager &_files;
+    io_uring_prep_read_ptr _io_uring_prep_read;
+    io_uring_prep_write_ptr _io_uring_prep_write;
+    HTTPParser _parser;
+
 };
 
 #endif //IO_URING_STATIC_SERVER_CONNECTION_STATE_H

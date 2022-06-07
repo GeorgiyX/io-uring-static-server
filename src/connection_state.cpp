@@ -1,78 +1,53 @@
 // project
 #include "connection_state.h"
 #include "logger.h"
+#include "config.h"
+#include "io_uring_wrappers.h"
+#include "http.h"
+
+// stl
+#include <sys/sendfile.h>
+
+ConnectionState::ConnectionState(std::shared_ptr<io_uring> _ring) :
+        _state(ACCEPT), _result(0), _fd(0), _ring(std::move(_ring)),
+        _maxConnections(0), _activeFileTransmit(),
+        _buffers(BufferManager::get_mutable_instance()),
+        _files(FileManager::get_mutable_instance()),
+        _io_uring_prep_read(), _io_uring_prep_write(), _parser() {
+    const auto &params = Config::get_const_instance().params();
+    if (params.registerBuffers) {
+        _io_uring_prep_write = io_uring_prep_write_fixed_wrapped;
+        _io_uring_prep_read = io_uring_prep_read_fixed_wrapped;
+    } else {
+        _io_uring_prep_write = io_uring_prep_send_wrapped;
+        _io_uring_prep_read = io_uring_prep_recv_wrapped;
+    }
+    _maxConnections = params.ringEntities + params.rlimitNoFile;
+    _activeFileTransmit.resize(_maxConnections);
+}
 
 void ConnectionState::process() {
     if (_result < 0) {
         Logger::warning(std::string("unsuccessful request, state: " +
                                     std::to_string(static_cast<int>(_state)) +
                                     ", descriptor: " + std::to_string(_fd)));
-
         return;
     }
 
-
     switch (_state) {
         case ACCEPT:
+            processAccept();
             break;
         case RECEIVE:
+            processReceive();
             break;
         case WRITE:
+            processWrite();
             break;
         case INIT:
             addAcceptorSQE(_fd);
             break;
     }
-
-    switch (request_data_event_type(cqe->user_data)) {
-        case EVENT_TYPE_ACCEPT:
-            /* После приеме содениения нужно снова попросить ядро следить за accept сокетом*/
-            add_accept_request(ring, server_fd,
-                               &client_addr, &client_addr_len);
-            if (LIKELY(cqe->res < nconnections)) {
-                /* Для этого клиента ничего еще не прочиатно буффер */
-                buffer_lengths[cqe->res] = 0;
-                add_read_request(ring, cqe->res);
-            } else {   /* Соединений больше чем мы установили в конфиге, см. порядок нумерации дескрипторов */
-                fprintf(stderr, "server capacity exceeded: %d / %d\n",
-                        cqe->res, nconnections);
-                close(cqe->res);
-            }
-            break;
-
-        case EVENT_TYPE_READ:
-            /* recv может иногда вернуть 0 байт, это валидная ситуация и мы ничего не делаем */
-            if (LIKELY(cqe->res)) // non-empty request?
-                handle_request(ring,
-                               request_data_client_fd(cqe->user_data),
-                               cqe->res);
-            break;
-
-        case EVENT_TYPE_WRITE: {
-            int client_fd = request_data_client_fd(cqe->user_data);
-            if (LIKELY(file_fds[client_fd] != 0)) {
-                off_t offset = 0;
-                /* sendfile синхронный, но очень быстрый. быстрее работает чем через splice*/
-                if (sendfile(client_fd, file_fds[client_fd],
-                             &offset, buffer_lengths[client_fd]) < 0)
-                    perror("sendfile");
-            }
-            close(client_fd);
-        }
-    }
-
-}
-
-ConnectionState::ConnectionState(std::shared_ptr<io_uring> _ring) :
-        _state(ACCEPT), _result(0), _fd(0), _ring(std::move(_ring)) {
-
-}
-
-void ConnectionState::addAcceptorSQE(int fd) {
-    auto sqe = io_uring_get_sqe(_ring.get());
-    io_uring_prep_accept(sqe, _fd, nullptr, nullptr, 0);
-    io_uring_sqe_set_data(sqe, reinterpret_cast<void *>(ConnectionState::packUserData(ConnectionState::ACCEPT, fd)));
-    io_uring_submit(_ring.get());
 }
 
 uint64_t ConnectionState::packUserData(ConnectionState::State state, int fd) {
@@ -94,4 +69,56 @@ ConnectionState &ConnectionState::restore(uint64_t packedData, int result) {
     _fd = ConnectionState::unpackFd(packedData);
     _result = result;
     return *this;
+}
+
+void ConnectionState::addAcceptorSQE(int fd) {
+    auto sqe = io_uring_get_sqe(_ring.get());
+    io_uring_prep_accept(sqe, _fd, nullptr, nullptr, 0);
+    io_uring_sqe_set_data(sqe, reinterpret_cast<void *>(ConnectionState::packUserData(ConnectionState::ACCEPT, fd)));
+    io_uring_submit(_ring.get());
+}
+
+void ConnectionState::addReadSQE(int fd) {
+    auto sqe = io_uring_get_sqe(_ring.get());
+    size_t filling = _buffers.getBufferFilling(fd);
+    _io_uring_prep_read(sqe, fd,
+                        _buffers.getBuffer(fd) + filling,
+                        _buffers.bufferSize() - filling);
+    io_uring_sqe_set_data(
+            sqe, reinterpret_cast<void *>(ConnectionState::packUserData(ConnectionState::RECEIVE, fd)));
+    io_uring_submit(_ring.get());
+}
+
+void ConnectionState::processAccept() {
+    addAcceptorSQE(_fd);
+    if (_result > _maxConnections) {
+        Logger::warning("descriptor number (" + std::to_string(_result)
+                        + ") signals that the number of connections is exceeded, the connection will be closed");
+        close(_result);
+        return;
+    }
+    _buffers.setBufferFilling(0, _result);
+    addReadSQE(_result);
+}
+
+void ConnectionState::processWrite() {
+    /* if there is no value, then sending the file is not required. */
+    auto file = _activeFileTransmit.at(_fd);
+    if (!file) {
+        close(_fd);
+    }
+
+    off_t offset = 0;
+    /* sendfile is synchronous, but very fast. works faster than via splice */
+    if (sendfile(_fd, file->fd, &offset, file->size) < 0) {
+        Logger::warning("error in sendfile");
+    }
+
+    close(_fd);
+}
+
+void ConnectionState::processReceive() {
+    /* zero send */
+    if (!_result) { return; }
+    //todo: pase http
 }

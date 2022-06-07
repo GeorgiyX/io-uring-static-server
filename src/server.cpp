@@ -77,7 +77,7 @@ std::shared_ptr<io_uring> Server::createRing(int backendFd) {
 void Server::registerBuffers() {
     std::vector<iovec> iovectors(BufferManager::buffersCount());
     for (int index = 0; index < iovectors.size(); index++) {
-        iovectors[index].iov_base = BufferManager::get_mutable_instance().getBufferByFd(index);
+        iovectors[index].iov_base = BufferManager::get_mutable_instance().getBuffer(index);
         iovectors[index].iov_len = BufferManager::fullBufferSize();
     }
 
