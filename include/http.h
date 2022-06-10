@@ -55,12 +55,13 @@ struct HTTPParser {
     Method method;
     std::string path;
 
-    ParseStatus parse(const char *data, size_t length);
+    ParseStatus parse(char *data, size_t length);
 
 private:
     bool parseMethod(const char *data, size_t length);
     bool hasFirstRow(const char *data, size_t length);
     void parsePath(const char *data, size_t length);
+    void terminateFirstRow(char *data, size_t length);
 
 };
 

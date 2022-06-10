@@ -24,7 +24,7 @@ function benchmark() {
       sudo fuser -k 80/tcp > /dev/null
       echo -e "test $COMMAND at $THREADS threads and $CONNECTIONS connections"
       touch $FILE_PATH
-      $COMMAND & sleep 2 && $WRK_COMMAND -c$CONNECTIONS -t$THREADS -d100s $URL >> $FILE_PATH
+      $COMMAND & sleep 2 && $WRK_COMMAND -c$CONNECTIONS -t$THREADS -d10s $URL >> $FILE_PATH
       sudo fuser -k 80/tcp > /dev/null
       echo -e "\n" >> $FILE_PATH
 }
