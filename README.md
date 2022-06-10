@@ -38,7 +38,11 @@ Run tests:
 http-test-suite/httptest.py
 ```
 
+Run benchmark (see the contents of the script to run correctly):
 
+```bash
+./benchmark.sh
+```
 
 ## Performance
 
