@@ -41,17 +41,18 @@ private:
 
     void processOkParse();
     void processIncompleteParse();
-    void processInvalidParse();
 
     void addAcceptorSQE(int fd);
     void addReadSQE(int fd);
     void addSendSQE(int fd);
+    void sendOnlyHeaders(HTTPResp::RespCode code);
+    void sendHeadersOk(const std::optional<FileManager::file_info_ref> &file);
 
     State _state;
     int _result;
     int _fd;
     int _maxConnections;  // highest descriptor (sock + file)
-    std::vector<std::optional<FileManager::FileInfo>> _activeFileTransmit;  // map: fd-file
+    std::vector<std::optional<FileManager::file_info_ref> > _activeFileTransmit;  // map: fd-file
     std::shared_ptr<io_uring> _ring;
     BufferManager &_buffers;
     FileManager &_files;

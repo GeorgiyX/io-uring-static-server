@@ -41,10 +41,12 @@ class FileManager : public boost::serialization::singleton<FileManager> {
 public:
     struct FileInfo {
         FileInfo() = default;
-        FileInfo(size_t &&sizeRef, int &&fdRef);
+        FileInfo(int _fd, size_t _size, std::string _extension);
+        FileInfo(FileInfo &&fileInfo);
         ~FileInfo();
-        size_t size;
-        int fd;
+        size_t size{};
+        int fd{};
+        std::string extension;
     };
 
     using cds_list = cds::container::MichaelKVList<cds::gc::nogc, std::string, FileInfo>;

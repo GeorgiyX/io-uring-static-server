@@ -7,6 +7,7 @@
 #include <boost/log/sources/logger.hpp>
 #include <boost/log/sources/severity_feature.hpp>
 #include <boost/log/sources/severity_logger.hpp>
+#include <boost/lexical_cast.hpp>
 
 // stl
 #include <stdexcept>
@@ -20,7 +21,9 @@ public:
         CRITICAL
     };
     struct ExceptionHandler {
-        void operator() (const std::runtime_error &err);
+        void operator() (const std::runtime_error &err) const;
+        void operator() (const boost::bad_lexical_cast &err) const;
+
     };
 
     static Logger &critical(const std::string &message);

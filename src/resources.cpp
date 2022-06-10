@@ -2,9 +2,11 @@
 #include "resources.h"
 #include "config.h"
 #include "utils.h"
+#include "logger.h"
 
 // stl
 #include <cstring>
+#include <utility>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/resource.h>
@@ -86,7 +88,7 @@ std::optional<FileManager::file_info_ref> FileManager::getFileInfo(const std::st
         throw std::runtime_error("can't fstat file");
     }
 
-    iter = _map.emplace(filePath, fd, statStruct.st_size);
+    iter = _map.emplace(filePath, fd, statStruct.st_size, path.extension().string());
     if (iter == _map.end()) {
         return {std::nullopt};
     }
@@ -94,11 +96,15 @@ std::optional<FileManager::file_info_ref> FileManager::getFileInfo(const std::st
     return {std::cref(iter->second)};
 }
 
-FileManager::FileInfo::FileInfo(size_t &&sizeRef, int &&fdRef)
-: size(sizeRef), fd(fdRef) {
-
-}
-
 FileManager::FileInfo::~FileInfo() {
     close(fd);
+}
+
+FileManager::FileInfo::FileInfo(int _fd, size_t _size, std::string _extension) :
+fd(_fd), size(_size), extension(std::move(_extension)) {
+}
+
+FileManager::FileInfo::FileInfo(FileInfo &&fileInfo) :
+fd(fileInfo.fd), size(fileInfo.size), extension(std::move(fileInfo.extension)){
+    fileInfo.fd = -1;
 }

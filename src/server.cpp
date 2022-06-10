@@ -19,27 +19,26 @@ _rings(), _mainRing(), _loops(), _mainLoop(), _acceptorFd(-1), _loopsThreads() {
 
     Logger::info("creating io_rings...");
     _mainRing = Server::createRing();
-    for (size_t index = 0; index < params.cpuLimit; index++) {
+    for (size_t index = 0; index < params.cpuLimit - 1; index++) {
         _rings.push_back(Server::createRing(_mainRing->ring_fd));
     }
 
-    Logger::info(" done!\nallocating buffers...");
+    Logger::info("allocating buffers...");
     BufferManager::get_mutable_instance().create(params.bufferSize, params.ringEntities);
     if (params.registerBuffers) {
-        Logger::info(" done!\nregistering buffers...");
+        Logger::info("registering buffers...");
         registerBuffers();
     }
 
-    Logger::info(" done!\nsetup storage...");
+    Logger::info("setup storage...");
     FileManager::get_mutable_instance();
 
 
-    Logger::info(" done!\ncreating event loops...");
+    Logger::info("creating event loops...");
     _mainLoop = std::make_shared<EventLoop>(_mainRing);
     std::for_each(_rings.begin(), _rings.end(), [this](auto &ring) {
         _loops.push_back(std::make_shared<EventLoop>(ring));
     });
-    Logger::info(" done!");
 }
 
 std::shared_ptr<io_uring> Server::createRing(int backendFd) {
@@ -75,16 +74,20 @@ std::shared_ptr<io_uring> Server::createRing(int backendFd) {
 }
 
 void Server::registerBuffers() {
+    if (!Utils::isPrivileged()) {
+        throw std::runtime_error("to use  register_buffers feature, you need super user rights");
+    }
+
     std::vector<iovec> iovectors(BufferManager::buffersCount());
     for (int index = 0; index < iovectors.size(); index++) {
         iovectors[index].iov_base = BufferManager::get_mutable_instance().getBuffer(index);
-        iovectors[index].iov_len = BufferManager::fullBufferSize();
+        iovectors[index].iov_len = BufferManager::get_const_instance().bufferSize();
     }
 
     Utils::increaseResourceLimit(RLIMIT_MEMLOCK, BufferManager::fullBufferSize());
 
     if (io_uring_register_buffers(_mainRing.get(), iovectors.data(), iovectors.size())) {
-        throw std::runtime_error("can't register buffers");
+        throw std::runtime_error(std::string("can't register buffers: ") + strerror(errno));
     }
 }
 
@@ -92,7 +95,7 @@ void Server::run() {
     Logger::info("open acceptor socket...");
     _acceptorFd = Server::createAcceptor(Config::get_const_instance().params().port,
                                          Config::get_const_instance().params().ringEntities);
-    Logger::info(" done!\nstart event loops");
+    Logger::info("start event loops");
     _loopsThreads.reserve(_loops.size());
     std::for_each(_loops.begin(), _loops.end(), [this](std::shared_ptr<EventLoop> &loop) {
         loop->init(_acceptorFd);
