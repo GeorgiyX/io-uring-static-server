@@ -60,8 +60,7 @@ struct HTTPParser {
 private:
     bool parseMethod(const char *data, size_t length);
     bool hasFirstRow(const char *data, size_t length);
-    void parsePath(const char *data, size_t length);
-    void terminateFirstRow(char *data, size_t length);
+    void parsePath(char *data, size_t length);
 
 };
 

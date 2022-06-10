@@ -44,7 +44,6 @@ HTTPParser::ParseStatus HTTPParser::parse(char *data, size_t length) {
     if (!hasFirstRow(data, length)) {
         return HTTPParser::INCOMPLETE;
     }
-    terminateFirstRow(data, length);
     if (!parseMethod(data, length)) {
         return HTTPParser::INVALID;
     }
@@ -56,18 +55,14 @@ bool HTTPParser::hasFirstRow(const char *data, size_t length) {
     return strstr(data, "\r\n");
 }
 
-void HTTPParser::parsePath(const char *data, size_t length) {
+void HTTPParser::parsePath(char *data, size_t length) {
+    auto eol = strstr(data, "\r\n");
+    *eol = '\0';
     auto start = strstr(data, " /") + 2;
     auto end = strstr(start, "?");
     end = end ? end : strstr(start, " ");
     auto pathLength = end - start;
     path = skyr::percent_decode(std::string_view(start, pathLength)).value();
-}
-
-#include <iostream>
-void HTTPParser::terminateFirstRow(char *data, size_t length) {
-    auto end = strstr(data, "\r\n");
-    *end = '\0';
 }
 
 void HTTPResp::copyResponse(char *buffer, size_t &written, HTTPResp::RespCode code) {
