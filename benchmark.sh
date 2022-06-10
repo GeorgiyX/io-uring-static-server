@@ -1,14 +1,14 @@
 #!/bin/bash
 
 NGNIX_COMMAND=nginx
-NGINX_CONFIG_1_CPU=$(realpath data/nginx-1-cpu.conf)
-NGINX_CONFIG_8_CPU=$(realpath data/nginx-8-cpu.conf)
+NGINX_CONFIG_1_CPU=$(realpath configs/nginx-1-cpu.conf)
+NGINX_CONFIG_8_CPU=$(realpath configs/nginx-8-cpu.conf)
 
 IO_URING_COMMAND=./build/io-uring-static-server
-IO_URING_CONFIG_1_CPU=data/io-uring-server-1-cpu.conf
-IO_URING_CONFIG_8_CPU=data/io-uring-server-8-cpu.conf
+IO_URING_CONFIG_1_CPU=configs/io-uring-server-1-cpu.conf
+IO_URING_CONFIG_8_CPU=configs/io-uring-server-8-cpu.conf
 
-BENCHMARK_DIR=benchmark
+BENCHMARK_DIR=benchmarks
 THREAD_COUNT=8
 WRK_COMMAND=/opt/bin/wrk
 URL=http://localhost:80/httptest/splash.css
@@ -20,10 +20,11 @@ function benchmark() {
       local THREADS="$2"
       local CONNECTIONS="$3"
       local FILE_PATH="$BENCHMARK_DIR/$4"
-
+	
+      sudo fuser -k 80/tcp > /dev/null
       echo -e "test $COMMAND at $THREADS threads and $CONNECTIONS connections"
       touch $FILE_PATH
-      $COMMAND & sleep 2 && $WRK_COMMAND -c$CONNECTIONS -t$THREADS -d10s $URL >> $FILE_PATH
+      $COMMAND & sleep 2 && $WRK_COMMAND -c$CONNECTIONS -t$THREADS -d100s $URL >> $FILE_PATH
       sudo fuser -k 80/tcp > /dev/null
       echo -e "\n" >> $FILE_PATH
 }

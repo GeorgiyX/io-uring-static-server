@@ -42,7 +42,7 @@ http-test-suite/httptest.py
 
 ## Performance
 
-Server performance was compared with nginx (epoll) using the wrk tool. Below are the benchmark results (RPS) for both servers, with different CPU configurations. To get metrics, you can use script `benchmark.sh`.  The load is represented as a get request for a file. Load goes for 10 seconds in 8 threads for 100, 1000, 10000 connections. Tests were performed on AMD Ryzen 7 5800HS, 8 cores, 16 GB RAM, kernel 5.13.0.
+Server performance was compared with nginx (epoll) using the wrk tool. Below are the benchmark results (RPS) for both servers, with different CPU configurations. To get metrics, you can use script `benchmark.sh`.  The load is represented as a `GET` request for a file (98.6 KB). Load goes for 100 seconds in 8 threads for 100, 1000, 10000 connections. Tests were performed on AMD Ryzen 7 5800HS, 8 cores, 16 GB RAM, kernel 5.13.0.
 
 **1 CPU test:**
 
@@ -51,9 +51,9 @@ Server performance was compared with nginx (epoll) using the wrk tool. Below are
 
 | connections | io-uring-static-server | nginx | difference |
 | ----------- | ---------------------- | ----- | ---------- |
-| 100         | 33915                  | 8214  | x4.1       |
-| 1K          | 33512                  | 8183  | x4.09      |
-| 10K         | 33505                  | 8533  | x3,9       |
+| 100         | 33947                  | 8306  | x4.09      |
+| 1K          | 33302                  | 8462  | x3.9       |
+| 10K         | 33313                  | 8454  | x3.94      |
 
 **8 CPU test:**
 
@@ -62,6 +62,6 @@ Server performance was compared with nginx (epoll) using the wrk tool. Below are
 
 | connections | io-uring-static-server | nginx | difference |
 | ----------- | ---------------------- | ----- | ---------- |
-| 100         | 78903                  | 66221 | x1.19      |
-| 1K          | 72095                  | 65356 | x1,1       |
-| 10K         | 72000                  | 66033 | x1,09      |
+| 100         | 79438                  | 65904 | x1.2       |
+| 1K          | 74167                  | 65492 | x1.13      |
+| 10K         | 72126                  | 64977 | x1.11      |

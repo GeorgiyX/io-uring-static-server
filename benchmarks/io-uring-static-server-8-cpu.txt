@@ -1,36 +1,36 @@
-Running 10s test @ http://localhost:80/httptest/splash.css
+Running 2m test @ http://localhost:80/httptest/splash.css
   8 threads and 100 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency   838.62us    1.35ms  40.66ms   99.46%
-    Req/Sec     9.98k   618.39    10.99k    90.16%
-  796958 requests in 10.10s, 73.30GB read
+    Latency   733.71us  690.16us 208.74ms   99.19%
+    Req/Sec     9.98k   475.92    11.37k    75.17%
+  7951743 requests in 1.67m, 731.39GB read
   Socket errors: connect 0, read 7, write 0, timeout 0
   Non-2xx or 3xx responses: 7
-Requests/sec:  78902.94
-Transfer/sec:      7.26GB
+Requests/sec:  79437.89
+Transfer/sec:      7.31GB
 
 
-Running 10s test @ http://localhost:80/httptest/splash.css
+Running 2m test @ http://localhost:80/httptest/splash.css
   8 threads and 1000 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    13.26ms    1.33ms  25.55ms   85.23%
-    Req/Sec     9.19k   446.82    10.37k    77.01%
-  728274 requests in 10.10s, 66.99GB read
+    Latency    13.06ms    1.03ms  30.40ms   82.46%
+    Req/Sec     9.32k   336.30    10.10k    74.33%
+  7421876 requests in 1.67m, 682.65GB read
   Socket errors: connect 0, read 7, write 0, timeout 0
   Non-2xx or 3xx responses: 7
-Requests/sec:  72095.12
-Transfer/sec:      6.63GB
+Requests/sec:  74166.55
+Transfer/sec:      6.82GB
 
 
-Running 10s test @ http://localhost:80/httptest/splash.css
+Running 2m test @ http://localhost:80/httptest/splash.css
   8 threads and 10000 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    12.81ms    1.50ms  25.95ms   74.30%
-    Req/Sec     9.13k     0.93k   10.63k    67.33%
-  726460 requests in 10.09s, 66.82GB read
+    Latency    11.78ms    1.99ms 218.71ms   72.30%
+    Req/Sec     9.07k     1.38k   11.02k    73.71%
+  7219269 requests in 1.67m, 664.02GB read
   Socket errors: connect 8987, read 7, write 0, timeout 0
   Non-2xx or 3xx responses: 7
-Requests/sec:  72000.32
-Transfer/sec:      6.62GB
+Requests/sec:  72125.55
+Transfer/sec:      6.63GB
 
 
