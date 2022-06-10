@@ -46,8 +46,8 @@ Server performance was compared with nginx (epoll) using the wrk tool. Below are
 
 **1 CPU test:**
 
-* io-uring-static-server: config, result.
-* nginx: config, result.
+* io-uring-static-server: [config](https://github.com/GeorgiyX/io-uring-static-server/blob/master/configs/io-uring-server-1-cpu.conf), [result](https://github.com/GeorgiyX/io-uring-static-server/blob/master/benchmarks/io-uring-static-server-1-cpu.txt).
+* nginx: [config](https://github.com/GeorgiyX/io-uring-static-server/blob/master/configs/nginx-1-cpu.conf), [result](https://github.com/GeorgiyX/io-uring-static-server/blob/master/benchmarks/ngnix-1-cpu.txt).
 
 | connections | io-uring-static-server | nginx | difference |
 | ----------- | ---------------------- | ----- | ---------- |
@@ -57,8 +57,8 @@ Server performance was compared with nginx (epoll) using the wrk tool. Below are
 
 **8 CPU test:**
 
-* io-uring-static-server: config, result.
-* nginx: config, result.
+* io-uring-static-server: [config](https://github.com/GeorgiyX/io-uring-static-server/blob/master/configs/io-uring-server-8-cpu.conf), [result](https://github.com/GeorgiyX/io-uring-static-server/blob/master/benchmarks/io-uring-static-server-8-cpu.txt).
+* nginx: [config](https://github.com/GeorgiyX/io-uring-static-server/blob/master/configs/nginx-8-cpu.conf), [result](https://github.com/GeorgiyX/io-uring-static-server/blob/master/benchmarks/ngnix-8-cpu.txt).
 
 | connections | io-uring-static-server | nginx | difference |
 | ----------- | ---------------------- | ----- | ---------- |
