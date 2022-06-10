@@ -46,7 +46,7 @@ private:
     void addReadSQE(int fd);
     void addSendSQE(int fd);
     void sendOnlyHeaders(HTTPResp::RespCode code);
-    void sendHeadersOk(const std::optional<FileManager::file_info_ref> &file);
+    void sendHeadersOk(const std::optional<FileManager::file_info_ref> &file, bool hasBody = true);
 
     State _state;
     int _result;

@@ -31,7 +31,7 @@ _rings(), _mainRing(), _loops(), _mainLoop(), _acceptorFd(-1), _loopsThreads() {
     }
 
     Logger::info("setup storage...");
-    FileManager::get_mutable_instance();
+    FileManager::get_mutable_instance().init();
 
 
     Logger::info("creating event loops...");
@@ -106,6 +106,10 @@ void Server::run() {
 }
 
 int Server::createAcceptor(unsigned port, unsigned backlog) {
+    if (port < 1024 && !Utils::isPrivileged()) {
+        throw std::runtime_error("can't bind to port \"" + std::to_string(port) + "\" without root privilege");
+    }
+
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) {
         throw std::runtime_error("can't create backlog for acceptor socket");

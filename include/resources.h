@@ -54,6 +54,7 @@ public:
     using file_info_ref = std::reference_wrapper<const FileInfo>;
 
     std::optional<file_info_ref> getFileInfo(const std::string &filePath);
+    void init();
 private:
     FileManager();
     friend boost::serialization::detail::singleton_wrapper<FileManager>;

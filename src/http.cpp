@@ -85,7 +85,8 @@ void HTTPResp::copyResponse(char *buffer, size_t &written, HTTPResp::RespCode co
 void
 HTTPResp::copyResponse200(char *buffer, size_t &written, const FileManager::FileInfo &file) {
     static std::string responseFormat = "HTTP/1.1 200 OK\r\nServer: hl-server\r\n"
-                                        "Date: %s\r\nContent-Type: %s\r\nContent-Length: %ld\r\n\r\n";
+                                        "Date: %s\r\nContent-Type: %s\r\nContent-Length: %ld\r\n"
+                                        "Connection: close\r\n\r\n";
     char date[DATA_BUFFER_SIZE];
     HTTPResp::writeDate(date, DATA_BUFFER_SIZE);
     written = std::snprintf(buffer, BufferManager::get_const_instance().bufferSize(),
@@ -103,6 +104,7 @@ const char *HTTPResp::getMimeType(const std::string &extension) {
             std::make_pair(".js", "application/javascript"),
             std::make_pair(".css", "text/css"),
             std::make_pair(".txt", "text/plain"),
+            std::make_pair(".swf", "application/x-shockwave-flash"),
     };
     static const std::string defaultMime = "application/octet-stream";
     if (!responseFormats.contains(extension)) {

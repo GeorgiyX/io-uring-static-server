@@ -73,7 +73,6 @@ ConnectionState &ConnectionState::restore(uint64_t packedData, int result) {
 }
 
 void ConnectionState::addAcceptorSQE(int fd) {
-    Logger::info("addAcceptorSQE: " + std::to_string(fd));
     auto sqe = io_uring_get_sqe(_ring.get());
     io_uring_prep_accept(sqe, _fd, nullptr, nullptr, 0);
     io_uring_sqe_set_data(sqe, reinterpret_cast<void *>(ConnectionState::packUserData(ConnectionState::ACCEPT, fd)));
@@ -81,7 +80,6 @@ void ConnectionState::addAcceptorSQE(int fd) {
 }
 
 void ConnectionState::addReadSQE(int fd) {
-    Logger::info("addReadSQE: " + std::to_string(fd));
     auto sqe = io_uring_get_sqe(_ring.get());
     size_t filling = _buffers.getBufferFilling(fd);
     _io_uring_prep_read(sqe, fd,
@@ -94,10 +92,7 @@ void ConnectionState::addReadSQE(int fd) {
 
 
 void ConnectionState::addSendSQE(int fd) {
-    Logger::info("addSendSQE: " + std::to_string(fd));
     struct io_uring_sqe *sqe = io_uring_get_sqe(_ring.get());
-    auto buf = _buffers.getBuffer(fd);
-    std:: cout << _buffers.getBufferFilling(fd) <<  std::endl;
     _io_uring_prep_write(sqe, fd, _buffers.getBuffer(fd), _buffers.getBufferFilling(fd));
     io_uring_sqe_set_data(
             sqe, reinterpret_cast<void *>(ConnectionState::packUserData(ConnectionState::WRITE, fd)));
@@ -127,7 +122,7 @@ void ConnectionState::processWrite() {
     off_t offset = 0;
     /* sendfile is synchronous, but very fast. works faster than via splice + pipe */
     if (sendfile(_fd, file.value().get().fd, &offset, file.value().get().size) < 0) {
-        Logger::warning(std::string("error in sendfile: ")  + strerror(errno));
+        Logger::warning(std::string("error in sendfile: ") + strerror(errno));
     }
 
     close(_fd);
@@ -175,11 +170,19 @@ void ConnectionState::processOkParse() {
 
     auto file = _files.getFileInfo(_parser.path);
     if (!file) {
+        /* 403 on path to dir without index.html */
+        auto path = (std::filesystem::path(Config::get_const_instance().params().documentRoot) / _parser.path);
+        std::filesystem::is_directory(path) ?
+        sendOnlyHeaders(HTTPResp::RESP_403) :
         sendOnlyHeaders(HTTPResp::RESP_404);
         return;
     }
 
-    sendHeadersOk(file->get());
+    if (_parser.method == HTTPParser::HEAD) {
+        sendHeadersOk(file, false);
+        return;
+    }
+    sendHeadersOk(file);
 }
 
 void ConnectionState::sendOnlyHeaders(HTTPResp::RespCode code) {
@@ -190,9 +193,9 @@ void ConnectionState::sendOnlyHeaders(HTTPResp::RespCode code) {
     addSendSQE(_fd);
 }
 
-void ConnectionState::sendHeadersOk(const std::optional<FileManager::file_info_ref>  &file) {
+void ConnectionState::sendHeadersOk(const std::optional<FileManager::file_info_ref> &file, bool hasBody) {
     size_t respLength = 0;
-    _activeFileTransmit.at(_fd) = file;
+    _activeFileTransmit.at(_fd) = hasBody ? file : std::nullopt;
     HTTPResp::copyResponse200(_buffers.getBuffer(_fd), respLength, file->get());
     _buffers.setBufferFilling(respLength, _fd);
     addSendSQE(_fd);

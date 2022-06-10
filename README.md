@@ -1,48 +1,67 @@
-## Что это 
-HTTP сервер для раздачи статики. Написан на C++ с использованием API `io_uring`.
+## What is it
+HTTP server for serving static files. Written in C++ using the `io_uring` API.
 
-## Особенности работы
+## Features
 
-1. ring-per-thread, (`cpu_limit` опция в конфиге, либо на усмотрение сервера).
-1. worker-pool разделяется между всеми кольцами (`share_ring_backend` опция в конфиге).
-2. Буферы под чтение и запись аллоцируются в начале работы и переиспользуются в течении работы сервера. 
-2. Буферы могут быть пошарены между яром и серверов, в таком случае не происходит копирование между яром и user space (`register_buffers` опция в конфиге).
-3. Возможность запуска в режиме `SQPOLL` . I/O в таком режиме осуществляется без системных вызовов (`enable_sq_poll` опция в конфиге).
-3. Использование DMA при отправке файлов.
-## Сборка и запуск
+1. ring-per-thread, (`cpu_limit` option in the config, or at the option of server).
+2. io_uring workerpool is shared between all rings (`share_ring_backend` option in the config).
+3. Buffers for reading and writing are allocated at the beginning of work and reused during server operation. 
+4. Buffers can be shared between kernel and servers, in this case there is no copying between kernel and user space (`register_buffers` option in the config, *it is not working correctly now, leave `0`*).
+5. The ability to run in the `SQPOLL` mode. I/O in this mode is performed without system calls (`enable_sq_poll` option in the config).
+6. Using DMA when sending files.
+## Build and run
 
-Клонируем репозиторий и подмодули:
+Cloning the repository and submodules:
 
 ```bash
 git clone --recurse-submodules https://github.com/GeorgiyX/io-uring-static-server.git
 ```
 
+Buid docker image:
 
 ```bash
-
-    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND                                                                                  
-  11998 georgiy   20   0  237240   1596   1420 S   0,0   0,0   0:00.09 io-uring-static                                                                          
-  11999 georgiy   20   0  237240   1596   1420 S   0,0   0,0   0:03.84 iou-sqp-11998                                                                            
-  12000 georgiy   20   0  237240   1596   1420 S   0,0   0,0   0:00.00 io-uring-static                                                                          
-  12001 georgiy   20   0  237240   1596   1420 S   0,0   0,0   0:00.00 io-uring-static                                                                          
-  12002 georgiy   20   0  237240   1596   1420 S   0,0   0,0   0:00.00 io-uring-static                                                                          
-  12019 georgiy   20   0  237240   1596   1420 S   0,0   0,0   0:00.00 iou-wrk-11999                                                                            
-  12020 georgiy   20   0  237240   1596   1420 S   0,0   0,0   0:00.00 iou-wrk-11999                                                                            
-  12021 georgiy   20   0  237240   1596   1420 S   0,0   0,0   0:00.00 iou-wrk-11999
+docker build -t io-uring-static .
 ```
+
+Run server:
 
 ```bash
-    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND                                                                                  
-  12635 georgiy   20   0  237240   1648   1472 S   0,0   0,0   0:00.10 io-uring-static                                                                          
-  12636 georgiy   20   0  237240   1648   1472 S   0,0   0,0   0:01.79 iou-sqp-12635                                                                            
-  12637 georgiy   20   0  237240   1648   1472 S   0,0   0,0   0:00.50 iou-sqp-12635                                                                            
-  12638 georgiy   20   0  237240   1648   1472 S   0,0   0,0   0:00.00 io-uring-static                                                                          
-  12639 georgiy   20   0  237240   1648   1472 S   0,0   0,0   0:00.50 iou-sqp-12635                                                                            
-  12640 georgiy   20   0  237240   1648   1472 S   0,0   0,0   0:00.00 io-uring-static                                                                          
-  12641 georgiy   20   0  237240   1648   1472 S   0,0   0,0   0:00.51 iou-sqp-12635                                                                            
-  12642 georgiy   20   0  237240   1648   1472 S   0,0   0,0   0:00.00 io-uring-static                                                                          
-  12650 georgiy   20   0  237240   1648   1472 S   0,0   0,0   0:00.00 iou-wrk-12641                                                                            
-  12651 georgiy   20   0  237240   1648   1472 S   0,0   0,0   0:00.00 iou-wrk-12639                                                                            
-  12652 georgiy   20   0  237240   1648   1472 S   0,0   0,0   0:00.00 iou-wrk-12637
+docker run -p 80:80 -v <config_dir>:/etc/httpd.conf:ro -v <static_dir>:/var/www/html:ro --name io-uring-static -t io-uring-static
 ```
 
+* `<config_dir>` - directory with configuration files
+* `<static_dir>` - directory with static files
+
+Run tests:
+
+```bash
+http-test-suite/httptest.py
+```
+
+
+
+## Performance
+
+Server performance was compared with nginx (epoll) using the wrk tool. Below are the benchmark results (RPS) for both servers, with different CPU configurations. To get metrics, you can use script `benchmark.sh`.  The load is represented as a get request for a file. Load goes for 10 seconds in 8 threads for 100, 1000, 10000 connections. Tests were performed on AMD Ryzen 7 5800HS, 8 cores, 16 GB RAM, kernel 5.13.0.
+
+**1 CPU test:**
+
+* io-uring-static-server: config, result.
+* nginx: config, result.
+
+| connections | io-uring-static-server | nginx | difference |
+| ----------- | ---------------------- | ----- | ---------- |
+| 100         | 33915                  | 8214  | x4.1       |
+| 1K          | 33512                  | 8183  | x4.09      |
+| 10K         | 33505                  | 8533  | x3,9       |
+
+**8 CPU test:**
+
+* io-uring-static-server: config, result.
+* nginx: config, result.
+
+| connections | io-uring-static-server | nginx | difference |
+| ----------- | ---------------------- | ----- | ---------- |
+| 100         | 78903                  | 66221 | x1.19      |
+| 1K          | 72095                  | 65356 | x1,1       |
+| 10K         | 72000                  | 66033 | x1,09      |

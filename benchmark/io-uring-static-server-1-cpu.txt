@@ -1,0 +1,31 @@
+Running 10s test @ http://localhost:80/httptest/splash.css
+  8 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.89ms    4.27ms 210.76ms   99.88%
+    Req/Sec     4.26k   328.99     4.73k    61.26%
+  342534 requests in 10.10s, 31.51GB read
+Requests/sec:  33914.88
+Transfer/sec:      3.12GB
+
+
+Running 10s test @ http://localhost:80/httptest/splash.css
+  8 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    29.54ms    3.01ms 232.56ms   78.15%
+    Req/Sec     4.24k   321.44     4.73k    68.75%
+  337249 requests in 10.06s, 31.02GB read
+Requests/sec:  33512.09
+Transfer/sec:      3.08GB
+
+
+Running 10s test @ http://localhost:80/httptest/splash.css
+  8 threads and 10000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    30.00ms    3.02ms 237.25ms   80.04%
+    Req/Sec     4.22k     1.12k    6.62k    59.75%
+  336173 requests in 10.03s, 30.92GB read
+  Socket errors: connect 8987, read 0, write 0, timeout 0
+Requests/sec:  33504.85
+Transfer/sec:      3.08GB
+
+

@@ -53,14 +53,10 @@ size_t BufferManager::bufferSize() const {
 
 // No hashing is planned. Creating a map with reserve. Load factor = 3 (https://habr.com/ru/post/250383/).
 FileManager::FileManager() :
+// todo: remove boost singleton (need Scott Meyers singleton)
 _map(Config::get_const_instance().params().rlimitNoFile, 3),
-_basePath(Config::get_const_instance().params().documentRoot)
+_basePath()
 {
-    if (!std::filesystem::exists(_basePath)) {
-        throw std::runtime_error("document dir not exists");
-    }
-
-    Utils::increaseResourceLimit(RLIMIT_NOFILE, Config::get_const_instance().params().rlimitNoFile);
 }
 
 std::optional<FileManager::file_info_ref> FileManager::getFileInfo(const std::string &filePath) {
@@ -94,6 +90,15 @@ std::optional<FileManager::file_info_ref> FileManager::getFileInfo(const std::st
     }
 
     return {std::cref(iter->second)};
+}
+
+void FileManager::init() {
+    _basePath =  Config::get_const_instance().params().documentRoot;
+    if (!std::filesystem::exists(_basePath)) {
+        throw std::runtime_error("document dir not exists");
+    }
+
+    Utils::increaseResourceLimit(RLIMIT_NOFILE, Config::get_const_instance().params().rlimitNoFile);
 }
 
 FileManager::FileInfo::~FileInfo() {
